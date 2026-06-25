@@ -58,7 +58,7 @@ export function PoseAnalyzer() {
     seek,
     stepFrame,
     setRate,
-  } = useVideoPlayer();
+  } = useVideoPlayer({ src: blobUrl });
 
   const { isScrubbing, scrubHandlers } = useVideoScrubbing({
     duration,
@@ -98,7 +98,7 @@ export function PoseAnalyzer() {
   const [webcamActive, setWebcamActive] = useState(false);
   const webcamActiveRef = useRef(false);
   const [liveAnalysis, setLiveAnalysis] = useState<PostureAnalysisResult | null>(null);
-  const [webcamReps, setWebcamReps] = useState<Array<{ id: string; repIndex: number; duration: number; maxDepth: string; isGood: boolean; errorType: string[] }>>([]);
+  const [webcamReps, setWebcamReps] = useState<Array<{ id: string; repIndex: number; startTime?: number; endTime?: number; duration: number; maxDepth: string; isGood: boolean; errorType: string[] }>>([]);
   const [webcamRepCount, setWebcamRepCount] = useState(0);
   const [webcamGoodReps, setWebcamGoodReps] = useState(0);
 
@@ -106,7 +106,7 @@ export function PoseAnalyzer() {
   const [frames, setFrames] = useState<PoseFrame[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [videoReps, setVideoReps] = useState<Array<{ id: string; repIndex: number; duration: number; maxDepth: string; isGood: boolean; errorType: string[] }>>([]);
+  const [videoReps, setVideoReps] = useState<Array<{ id: string; repIndex: number; startTime?: number; endTime?: number; duration: number; maxDepth: string; isGood: boolean; errorType: string[] }>>([]);
 
   // 세션 저장 및 히스토리 관리 (localStorage 초기화)
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>(() => {
@@ -591,7 +591,7 @@ export function PoseAnalyzer() {
     setProgress(0);
 
     try {
-      const result = await detectPoseInVideo(video, setProgress, 10); // 10 FPS 분석
+      const result = await detectPoseInVideo(video, setProgress, 30); // 30 FPS 분석
       setFrames(result);
 
       // 영상 전체 랩 카운팅 자동 스캔
@@ -622,7 +622,7 @@ export function PoseAnalyzer() {
 
   // 비디오 파일 랩 카운터 스캐너 (전체 프레임 배열 분석용)
   function scanVideoReps(poseFrames: PoseFrame[], curExercise: 'squat' | 'deadlift') {
-    const reps: Array<{ id: string; repIndex: number; duration: number; maxDepth: string; isGood: boolean; errorType: string[] }> = [];
+    const reps: Array<{ id: string; repIndex: number; startTime?: number; endTime?: number; duration: number; maxDepth: string; isGood: boolean; errorType: string[] }> = [];
     let state: 'none' | 'descending' | 'bottom' | 'ascending' = 'none';
     let startTimestamp = 0;
     let hasWinkOrRounding = false;
@@ -682,6 +682,7 @@ export function PoseAnalyzer() {
               repIndex: reps.length + 1,
               startTime: startTimestamp,
               endTime: frame.timestamp,
+              duration: frame.timestamp - startTimestamp,
               maxDepth,
               isGood: isGoodDepth && !hasWinkOrRounding,
               errorType: Array.from(errors),
@@ -729,6 +730,7 @@ export function PoseAnalyzer() {
               repIndex: reps.length + 1,
               startTime: startTimestamp,
               endTime: frame.timestamp,
+              duration: frame.timestamp - startTimestamp,
               maxDepth: 'standing',
               isGood: !hasWinkOrRounding,
               errorType: Array.from(errors),
@@ -800,7 +802,6 @@ export function PoseAnalyzer() {
       clear();
       setFrames([]);
       setVideoReps([]);
-      setCurrentFrameAnalysis(null);
       loadFile(file);
     }
   };
@@ -901,53 +902,64 @@ export function PoseAnalyzer() {
           </button>
           <h4 className="text-accent font-bold mb-3">📋 정확한 분석을 위해 체크해주세요</h4>
           <p className="text-sm text-muted mb-4">
-            정확한 폼 분석을 위한 간단한 준비사항이에요:
+            정확한 폼 분석을 위한 최적의 촬영 구도와 준비사항이에요:
           </p>
-          <div className="checklist-grid grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
-              <input
-                type="checkbox"
-                checked={guideAngle}
-                onChange={() => setGuideAngle(!guideAngle)}
-              />
-              <div>
-                <strong className="text-sm block">1. 측면에서 촬영하기</strong>
-                <span className="text-xs text-muted">완전한 측면에서 촬영해주세요. 정면이나 대각선은 정확도가 떨어져요.</span>
-              </div>
-            </label>
-            <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
-              <input
-                type="checkbox"
-                checked={guideFullBody}
-                onChange={() => setGuideFullBody(!guideFullBody)}
-              />
-              <div>
-                <strong className="text-sm block">2. 전신이 다 보이게</strong>
-                <span className="text-xs text-muted">머리부터 발끝까지 전부 화면에 나와야 해요.</span>
-              </div>
-            </label>
-            <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
-              <input
-                type="checkbox"
-                checked={guideClothing}
-                onChange={() => setGuideClothing(!guideClothing)}
-              />
-              <div>
-                <strong className="text-sm block">3. 관절이 잘 보이는 옷</strong>
-                <span className="text-xs text-muted">헐렁한 옷보다 타이트한 운동복을 입으면 분석이 더 정확해져요.</span>
-              </div>
-            </label>
-            <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
-              <input
-                type="checkbox"
-                checked={guideConsent}
-                onChange={() => setGuideConsent(!guideConsent)}
-              />
-              <div>
-                <strong className="text-sm block">4. 자동 일시정지 동의</strong>
-                <span className="text-xs text-muted">관절이 잘 안 보일 때는 정확도를 위해 분석이 잠시 멈춰요.</span>
-              </div>
-            </label>
+          
+          <div className="flex flex-row gap-5 mb-4 items-stretch">
+            <div className="guide-image-container w-1/2 bg-black/30 border border-border rounded-lg overflow-hidden flex items-center justify-center">
+              <img src={exercise === 'squat' ? '/squat_guide.jpg' : '/deadlift_guide.jpg'} alt={`${exercise === 'squat' ? '스쿼트' : '데드리프트'} 올바른 촬영 구도 가이드`} className="w-full h-full object-cover" />
+            </div>
+            
+            <div className="checklist-grid w-1/2 flex flex-col justify-center gap-3">
+              <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={guideAngle}
+                  onChange={() => setGuideAngle(!guideAngle)}
+                  className="mt-1"
+                />
+                <div>
+                  <strong className="text-sm block">1. 골반 높이에서 완벽한 측면 촬영</strong>
+                  <span className="text-xs text-muted leading-tight block mt-1">카메라 렌즈가 골반 높이에 오도록 맞추고, 비스듬한 각도가 아닌 90도 완벽한 측면에서 촬영해주세요.</span>
+                </div>
+              </label>
+              <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={guideFullBody}
+                  onChange={() => setGuideFullBody(!guideFullBody)}
+                  className="mt-1"
+                />
+                <div>
+                  <strong className="text-sm block">2. 머리부터 발끝까지 전신 포함</strong>
+                  <span className="text-xs text-muted leading-tight block mt-1">동작 중에도 머리나 발끝이 화면 밖으로 나가지 않도록 카메라와의 거리를 충분히 확보해주세요.</span>
+                </div>
+              </label>
+              <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={guideClothing}
+                  onChange={() => setGuideClothing(!guideClothing)}
+                  className="mt-1"
+                />
+                <div>
+                  <strong className="text-sm block">3. 관절이 잘 보이는 타이트한 옷</strong>
+                  <span className="text-xs text-muted leading-tight block mt-1">검은색 헐렁한 옷은 관절 추적을 어렵게 합니다. 윤곽이 잘 드러나는 옷이 인식률을 크게 높입니다.</span>
+                </div>
+              </label>
+              <label className="checklist-item flex items-start gap-2 bg-elevated p-3 rounded-lg border border-border cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={guideConsent}
+                  onChange={() => setGuideConsent(!guideConsent)}
+                  className="mt-1"
+                />
+                <div>
+                  <strong className="text-sm block">4. 가이드라인 준수 확인</strong>
+                  <span className="text-xs text-muted leading-tight block mt-1">위 가이드라인을 따르지 않으면 AI 분석 정확도가 떨어질 수 있음을 확인했습니다.</span>
+                </div>
+              </label>
+            </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-xs text-muted">영상은 내 기기에서만 처리돼요. 외부 전송 없음 🔒</span>
@@ -1280,7 +1292,7 @@ export function PoseAnalyzer() {
                   >
                     <div>
                       <strong className="block text-sm">{rep.repIndex}회차</strong>
-                      <span className="text-muted">{Math.round(rep.startTime * 10) / 10}초 지점</span>
+                      <span className="text-muted">{Math.round((rep.startTime || 0) * 10) / 10}초 지점</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
@@ -1294,7 +1306,7 @@ export function PoseAnalyzer() {
                       <button
                         type="button"
                         className="bg-elevated border border-border text-[10px] px-1.5 py-1 rounded text-white hover:border-accent"
-                        onClick={() => seek(rep.startTime)}
+                        onClick={() => seek(rep.startTime || 0)}
                       >
                         이동
                       </button>

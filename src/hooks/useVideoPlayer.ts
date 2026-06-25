@@ -4,10 +4,11 @@ import type { PlaybackRate } from '../types';
 interface UseVideoPlayerOptions {
   fps?: number;
   onTimeUpdate?: (time: number) => void;
+  src?: string | null;
 }
 
 export function useVideoPlayer(options: UseVideoPlayerOptions = {}) {
-  const { fps = 30, onTimeUpdate } = options;
+  const { fps = 30, onTimeUpdate, src } = options;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -52,6 +53,10 @@ export function useVideoPlayer(options: UseVideoPlayerOptions = {}) {
     const video = videoRef.current;
     if (!video) return;
 
+    if (video.readyState >= 1) {
+      setDuration(video.duration || 0);
+    }
+
     const onLoaded = () => setDuration(video.duration || 0);
     const onTime = () => {
       setCurrentTime(video.currentTime);
@@ -67,7 +72,7 @@ export function useVideoPlayer(options: UseVideoPlayerOptions = {}) {
       video.removeEventListener('timeupdate', onTime);
       video.removeEventListener('ended', onEnded);
     };
-  }, [onTimeUpdate]);
+  }, [onTimeUpdate, src]);
 
   return {
     videoRef,
