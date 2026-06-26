@@ -1,4 +1,4 @@
-import type { SavedAnalysis, Stroke } from '../types';
+import type { SavedAnalysis } from '../types';
 
 const ANALYSES_KEY = 'formtech_analyses';
 const SETTINGS_KEY = 'formtech_settings';
@@ -44,12 +44,4 @@ export function saveAnalysis(analysis: SavedAnalysis) {
   localStorage.setItem(ANALYSES_KEY, JSON.stringify(list.slice(0, 20)));
 }
 
-export function exportStrokes(strokes: Stroke[]): string {
-  return JSON.stringify(strokes, null, 2);
-}
 
-export function importStrokes(json: string): Stroke[] {
-  const parsed = JSON.parse(json);
-  if (!Array.isArray(parsed)) throw new Error('Invalid stroke data');
-  return parsed;
-}

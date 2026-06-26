@@ -13,3 +13,14 @@ export function speak(text: string, enabled: boolean) {
     console.error('Speech synthesis error:', e);
   }
 }
+
+export function stopSpeech() {
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      console.error('Speech synthesis stop error:', e);
+    }
+  }
+}
+

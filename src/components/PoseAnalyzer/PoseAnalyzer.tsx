@@ -3,17 +3,16 @@ import { analyzeSquatFrame, analyzeDeadliftFrame } from '../../utils/angles';
 import { detectPoseInVideo, findClosestFrame, initPoseDetector } from '../../services/poseDetection';
 import { saveAnalysis } from '../../utils/storage';
 import { scanVideoReps } from '../../utils/repCounter';
+import { stopSpeech, speak } from '../../utils/speech';
 import type { PoseFrame, RepRecord, PoseAnalysisResult as TFAnalysisResult, SavedSession } from '../../types';
 
 import { useBlobUrl } from '../../hooks/useBlobUrl';
 import { useVideoPlayer } from '../../hooks/useVideoPlayer';
-import { useCanvasDrawing } from '../../hooks/useCanvasDrawing';
 import { useSessionHistory } from '../../hooks/useSessionHistory';
 import { useGuidelineState } from './useGuidelineState';
 import { useWebcamAnalysis } from './useWebcamAnalysis';
 
 import { VideoControls } from '../VideoPlayer/VideoControls';
-import { CanvasOverlay } from '../CanvasOverlay/CanvasOverlay';
 import { GuidelinePanel } from './GuidelinePanel';
 import { AnglesFeedback } from './AnglesFeedback';
 import { RepsListPanel } from './RepsListPanel';
@@ -26,9 +25,6 @@ export function PoseAnalyzer() {
     videoRef, isPlaying, currentTime, duration, playbackRate,
     togglePlay, seek, stepFrame, setRate,
   } = useVideoPlayer({ src: blobUrl });
-  const {
-    strokes, drawMode, setDrawMode, startStroke, continueStroke, endStroke, undo, clear: clearDrawing,
-  } = useCanvasDrawing();
   const { savedSessions, saveSuccessMsg, saveSession, deleteSession } = useSessionHistory();
   const guideline = useGuidelineState();
 
@@ -80,6 +76,15 @@ export function PoseAnalyzer() {
   }, []);
 
   // 탭 및 종목 변경 핸들러
+  const handleSoundToggle = () => {
+    const nextState = !soundEnabled;
+    setSoundEnabled(nextState);
+    if (!nextState) {
+      stopSpeech();
+    } else {
+      speak('음성 코칭이 켜졌습니다', true);
+    }
+  };
   const handleTabChange = (tab: 'webcam' | 'video') => {
     setActiveTab(tab);
     stopWebcam();
@@ -197,7 +202,7 @@ export function PoseAnalyzer() {
   return (
     <div className="pose-analyzer">
       <div className="top-bar flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 bg-card p-3 md:p-4 rounded-xl md:rounded-2xl border border-white/5 gap-3 md:gap-0">
-        <div className="status-indicator font-bold text-sm md:text-base">
+        <div className="status-indicator font-bold text-sm md:text-base w-full">
           {modelReady ? (
             <span className="ready text-success flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse"></span> AI 엔진 활성화됨
@@ -209,12 +214,6 @@ export function PoseAnalyzer() {
               <span className="w-4 h-4 border-2 border-yellow border-t-transparent rounded-full animate-spin"></span> 모델 로딩 중...
             </span>
           )}
-        </div>
-        <div className="flex items-center">
-          <label className="flex items-center gap-2 text-sm text-muted cursor-pointer hover:text-white transition-colors bg-elevated/50 px-3 py-1.5 rounded-lg border border-white/5">
-            <input type="checkbox" checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} className="accent-accent" />
-            🔊 음성 코칭
-          </label>
         </div>
       </div>
 
@@ -260,16 +259,34 @@ export function PoseAnalyzer() {
                   {!webcamActive && (
                     <div className="absolute inset-0 bg-elevated flex flex-col justify-center items-center p-4">
                       <p className="font-bold mb-2">실시간 AI 폼 체크</p>
-                      <button type="button" className="primary-btn bg-accent text-bg px-5 py-2 font-bold" onClick={startWebcam} disabled={!modelReady}>카메라 켜기</button>
+                      <button type="button" className="primary-btn bg-accent text-bg px-6 py-2.5 font-bold text-lg rounded-xl flex items-center gap-3 transition-all shadow-[0_0_20px_rgba(0,255,136,0.4)] hover:shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none" onClick={startWebcam} disabled={!modelReady}>
+                        📷 <span>카메라 켜기</span>
+                      </button>
                     </div>
                   )}
                 </div>
-                {webcamActive && (
-                  <div className="flex justify-between items-center mt-3 bg-card p-3 rounded-radius border border-border">
-                    <span className="text-sm font-semibold flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>카메라 ON</span>
-                    <button type="button" className="secondary-btn border border-red text-red px-4 py-1 text-sm rounded-md" onClick={stopWebcam}>카메라 끄기</button>
+                <div className="flex justify-between items-center mt-3 bg-card p-3 rounded-radius border border-border">
+                  <div className="flex items-center gap-4">
+                    {webcamActive ? (
+                      <span className="text-sm font-semibold flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>카메라 ON</span>
+                    ) : (
+                      <span className="text-sm font-semibold flex items-center gap-2 text-muted"><span className="w-2 h-2 rounded-full bg-white/20"></span>카메라 OFF</span>
+                    )}
+                    <label className="flex items-center gap-2 text-sm text-muted cursor-pointer hover:text-white transition-colors bg-elevated/50 px-3 py-1.5 rounded-lg border border-white/5">
+                      <input type="checkbox" checked={soundEnabled} onChange={handleSoundToggle} className="accent-accent" />
+                      🔊 음성 코칭
+                    </label>
                   </div>
-                )}
+                  {webcamActive ? (
+                    <button type="button" className="secondary-btn bg-red/10 border border-red text-red font-bold px-5 py-1.5 text-sm rounded-lg flex items-center gap-2 hover:bg-red hover:text-white transition-all shadow-[0_0_10px_rgba(255,71,87,0.1)] hover:shadow-[0_0_20px_rgba(255,71,87,0.3)] hover:scale-105 active:scale-95" onClick={stopWebcam}>
+                      ⏹️ 카메라 끄기
+                    </button>
+                  ) : (
+                    <button type="button" className="primary-btn bg-accent text-bg font-bold px-5 py-1.5 text-sm rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none" onClick={startWebcam} disabled={!modelReady}>
+                      📷 카메라 켜기
+                    </button>
+                  )}
+                </div>
                 {liveAnalysis && <AnglesFeedback exercise={exercise} analysisResult={liveAnalysis} isWebcam={true} />}
               </div>
             ) : (
@@ -287,20 +304,8 @@ export function PoseAnalyzer() {
                     <div className="video-container bg-black rounded-radius overflow-hidden border border-border relative">
                       <video ref={videoRef} src={blobUrl} className="w-full block max-h-[500px] object-contain" playsInline />
                       <canvas ref={videoCanvasRef} className="absolute inset-0 pointer-events-none" />
-                      <CanvasOverlay strokes={strokes} width={dimensions.width} height={dimensions.height} interactive={true} onStartStroke={startStroke} onContinueStroke={continueStroke} onEndStroke={endStroke} />
                     </div>
                     <VideoControls isPlaying={isPlaying} currentTime={currentTime} duration={duration} playbackRate={playbackRate} onTogglePlay={togglePlay} onStepFrame={stepFrame} onSeek={seek} onSetRate={setRate} />
-                    
-                    <div className="drawing-toolbar mt-3 bg-elevated/50 p-3 rounded-xl flex justify-between">
-                      <div className="flex gap-2">
-                        <button type="button" className={`px-3 py-1 text-sm rounded-lg ${drawMode === 'point' ? 'bg-accent text-bg' : 'text-muted'}`} onClick={() => setDrawMode('point')}>📍 관절</button>
-                        <button type="button" className={`px-3 py-1 text-sm rounded-lg ${drawMode === 'path' ? 'bg-accent text-bg' : 'text-muted'}`} onClick={() => setDrawMode('path')}>✍️ 궤적</button>
-                      </div>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={undo} className="text-sm bg-card px-3 py-1 rounded-lg">↩️</button>
-                        <button type="button" onClick={clearDrawing} className="text-sm bg-red/10 text-red px-3 py-1 rounded-lg">🗑️</button>
-                      </div>
-                    </div>
                     
                     <div className="analysis-actions flex gap-4 mt-3 bg-card p-3 rounded-radius">
                       <button type="button" className="primary-btn bg-accent text-bg px-6 py-2 font-bold" onClick={runVideoAnalysis} disabled={analyzing || !modelReady}>

@@ -1,21 +1,4 @@
-export interface Point {
-  x: number;
-  y: number;
-}
 
-export interface Stroke {
-  id: string;
-  type: 'point' | 'path';
-  points: Point[];
-  color: string;
-}
-
-export interface DrawingState {
-  strokes: Stroke[];
-  currentStroke: Stroke | null;
-}
-
-export type DrawMode = 'point' | 'path';
 
 export interface PoseKeypoint {
   x: number;
