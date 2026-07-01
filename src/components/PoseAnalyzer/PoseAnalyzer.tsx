@@ -173,8 +173,8 @@ export function PoseAnalyzer() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 50 * 1024 * 1024) {
-        alert('최대 50MB 이하의 영상만 업로드할 수 있습니다. 길이를 줄여서 다시 시도해주세요.');
+      if (file.size > 300 * 1024 * 1024) {
+        alert('최대 2분 이하의 영상만 업로드할 수 있습니다. 길이를 줄여서 다시 시도해주세요.');
         e.target.value = '';
         return;
       }
@@ -209,14 +209,14 @@ export function PoseAnalyzer() {
         <div className="flex flex-wrap gap-3 w-full lg:w-auto pb-2 lg:pb-0 border-b lg:border-none border-white/5 p-1">
           <button
             type="button"
-            className={`tab-btn relative px-4 md:px-6 py-2.5 rounded-lg font-bold transition-all border-2 flex-1 sm:flex-none ${activeTab === 'webcam' ? 'bg-accent/20 border-accent text-white scale-105 z-10' : 'bg-elevated/30 border-transparent text-muted hover:text-white'}`}
+            className={`tab-btn relative px-3 md:px-6 py-2.5 rounded-lg font-bold transition-all border-2 flex-1 sm:flex-none whitespace-nowrap ${activeTab === 'webcam' ? 'bg-accent/20 border-accent text-white scale-105 z-10' : 'bg-elevated/30 border-transparent text-muted hover:text-white'}`}
             onClick={() => handleTabChange('webcam')}
           >
             🎥 실시간 카메라
           </button>
           <button
             type="button"
-            className={`tab-btn relative px-4 md:px-6 py-2.5 rounded-lg font-bold transition-all border-2 flex-1 sm:flex-none ${activeTab === 'video' ? 'bg-accent/20 border-accent text-white scale-105 z-10' : 'bg-elevated/30 border-transparent text-muted hover:text-white'}`}
+            className={`tab-btn relative px-3 md:px-6 py-2.5 rounded-lg font-bold transition-all border-2 flex-1 sm:flex-none whitespace-nowrap ${activeTab === 'video' ? 'bg-accent/20 border-accent text-white scale-105 z-10' : 'bg-elevated/30 border-transparent text-muted hover:text-white'}`}
             onClick={() => handleTabChange('video')}
           >
             📁 영상 업로드
@@ -252,26 +252,26 @@ export function PoseAnalyzer() {
                       </button>
                     </div>
                   )}
-                  {liveAnalysis && webcamActive && <AnglesFeedback exercise={exercise} analysisResult={liveAnalysis} isWebcam={true} />}
                 </div>
-                <div className="flex justify-between items-center mt-3 bg-card p-3 rounded-radius border border-border">
-                  <div className="flex items-center gap-4">
+                {liveAnalysis && webcamActive && <AnglesFeedback exercise={exercise} analysisResult={liveAnalysis} isWebcam={true} />}
+                <div className="flex flex-wrap sm:flex-nowrap justify-between items-center mt-3 bg-card p-2 md:p-3 rounded-radius border border-border gap-2">
+                  <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto justify-between sm:justify-start">
                     {webcamActive ? (
-                      <span className="text-sm font-semibold flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>카메라 ON</span>
+                      <span className="text-xs md:text-sm font-semibold flex items-center gap-1.5 md:gap-2 whitespace-nowrap"><span className="w-2 h-2 rounded-full bg-green animate-pulse"></span>카메라 ON</span>
                     ) : (
-                      <span className="text-sm font-semibold flex items-center gap-2 text-muted"><span className="w-2 h-2 rounded-full bg-white/20"></span>카메라 OFF</span>
+                      <span className="text-xs md:text-sm font-semibold flex items-center gap-1.5 md:gap-2 text-muted whitespace-nowrap"><span className="w-2 h-2 rounded-full bg-white/20"></span>카메라 OFF</span>
                     )}
-                    <label className="flex items-center gap-2 text-sm text-muted cursor-pointer hover:text-white transition-colors bg-elevated/50 px-3 py-1.5 rounded-lg border border-white/5">
+                    <label className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-muted cursor-pointer hover:text-white transition-colors bg-elevated/50 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-white/5 whitespace-nowrap">
                       <input type="checkbox" checked={soundEnabled} onChange={handleSoundToggle} className="accent-accent" />
                       🔊 음성 코칭
                     </label>
                   </div>
                   {webcamActive ? (
-                    <button type="button" className="secondary-btn bg-red/10 border border-red text-red font-bold px-5 py-1.5 text-sm rounded-lg flex items-center gap-2 hover:bg-red hover:text-white transition-all shadow-[0_0_10px_rgba(255,71,87,0.1)] hover:shadow-[0_0_20px_rgba(255,71,87,0.3)] hover:scale-105 active:scale-95" onClick={stopWebcam}>
+                    <button type="button" className="secondary-btn bg-red/10 border border-red text-red font-bold px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm rounded-lg flex items-center justify-center gap-1.5 md:gap-2 hover:bg-red hover:text-white transition-all shadow-[0_0_10px_rgba(255,71,87,0.1)] hover:shadow-[0_0_20px_rgba(255,71,87,0.3)] w-full sm:w-auto whitespace-nowrap" onClick={stopWebcam}>
                       ⏹️ 카메라 끄기
                     </button>
                   ) : (
-                    <button type="button" className="primary-btn bg-accent text-bg font-bold px-5 py-1.5 text-sm rounded-lg flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none" onClick={startWebcam} disabled={!modelReady}>
+                    <button type="button" className="primary-btn bg-accent text-bg font-bold px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm rounded-lg flex items-center justify-center gap-1.5 md:gap-2 transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] w-full sm:w-auto disabled:opacity-50 disabled:shadow-none whitespace-nowrap" onClick={startWebcam} disabled={!modelReady}>
                       📷 카메라 켜기
                     </button>
                   )}
@@ -285,7 +285,7 @@ export function PoseAnalyzer() {
                     <div className="upload-content text-center">
                       <span className="text-4xl mb-2 block">📁</span>
                       <p className="font-bold">운동 영상 올리기</p>
-                      <p className="text-xs text-muted mt-2">최대 50MB (mp4, mov 등)</p>
+                      <p className="text-xs text-muted mt-2">최대 2분 길이 (mp4, mov 등)</p>
                     </div>
                   </label>
                 ) : (
@@ -293,8 +293,8 @@ export function PoseAnalyzer() {
                     <div className="video-container bg-black rounded-radius overflow-hidden border border-border relative">
                       <video ref={videoRef} src={blobUrl} className="w-full block max-h-[500px] object-contain" playsInline />
                       <canvas ref={videoCanvasRef} className="absolute inset-0 pointer-events-none" />
-                      {currentFrameAnalysis && <AnglesFeedback exercise={exercise} analysisResult={currentFrameAnalysis} isWebcam={false} />}
                     </div>
+                    {currentFrameAnalysis && <AnglesFeedback exercise={exercise} analysisResult={currentFrameAnalysis} isWebcam={false} />}
                     <VideoControls isPlaying={isPlaying} currentTime={currentTime} duration={duration} playbackRate={playbackRate} onTogglePlay={togglePlay} onStepFrame={stepFrame} onSeek={seek} onSetRate={setRate} />
                     
                     <div className="analysis-actions flex flex-wrap gap-4 mt-3 bg-card p-3 rounded-radius">
