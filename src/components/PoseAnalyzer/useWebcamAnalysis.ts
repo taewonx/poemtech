@@ -47,10 +47,10 @@ export function useWebcamAnalysis({ exercise, soundEnabled }: UseWebcamAnalysisO
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 }, 
+          width: { ideal: 1920 }, 
+          height: { ideal: 1080 }, 
           facingMode: facingModeRef.current,
-          frameRate: { ideal: 30, max: 60 }
+          frameRate: { ideal: 60 }
         },
         audio: false,
       });
@@ -137,9 +137,17 @@ export function useWebcamAnalysis({ exercise, soundEnabled }: UseWebcamAnalysisO
       return;
     }
 
-    const rect = video.getBoundingClientRect();
-    canvas.width = rect.width || 640;
-    canvas.height = rect.height || 480;
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
+
+    if (videoWidth === 0 || videoHeight === 0) {
+      requestRef.current = requestAnimationFrame(processWebcamFrame);
+      return;
+    }
+
+    // 비디오 원본 해상도(예: 1080p)를 캔버스 픽셀 수에 그대로 반영하여 화질 저하 방지
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
 
     // 전면 카메라일 때만 거울 모드 렌더링
     if (facingModeRef.current === 'user') {
