@@ -7,7 +7,7 @@ export function Home() {
       {/* Hero Section */}
       <section className="text-center max-w-4xl px-4 py-12 md:py-24">
         <div className="inline-block px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-bold mb-6 animate-slide-up">
-          ✨ 100% 무료 · 별도 설치 없음
+          ✨ 100% 무료 · 영상 저장 X
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight animate-slide-up stagger-1">
           당신의 운동을 완벽하게 분석하는<br />

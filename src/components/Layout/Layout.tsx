@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 const NAV = [
   { path: '/', label: '소개' },
@@ -9,6 +10,7 @@ const NAV = [
 
 export function Layout() {
   const location = useLocation();
+  const { isInstallable, handleInstallClick } = usePWAInstall();
 
   return (
     <div className="app-layout">
@@ -31,6 +33,14 @@ export function Layout() {
               {label}
             </Link>
           ))}
+          {isInstallable && (
+            <button
+              onClick={handleInstallClick}
+              className="px-3 py-1.5 md:px-4 md:py-2 rounded-full text-sm font-bold whitespace-nowrap bg-accent text-bg hover:brightness-110 active:brightness-95 transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] ml-2"
+            >
+              📱 앱 설치
+            </button>
+          )}
         </nav>
       </header>
 

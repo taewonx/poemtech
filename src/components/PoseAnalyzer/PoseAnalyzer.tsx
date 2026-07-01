@@ -33,7 +33,7 @@ export function PoseAnalyzer() {
   // 웹캠 훅
   const {
     webcamVideoRef, canvasRef: webcamCanvasRef, webcamActive, startWebcam, stopWebcam,
-    liveAnalysis, webcamReps, setWebcamReps, webcamError,
+    toggleCamera, facingMode, liveAnalysis, webcamReps, setWebcamReps, webcamError,
   } = useWebcamAnalysis({ exercise, soundEnabled });
 
   // 비디오 파일 제어 상태
@@ -246,9 +246,9 @@ export function PoseAnalyzer() {
                   )}
                   {!webcamActive && (
                     <div className="absolute inset-0 bg-elevated flex flex-col justify-center items-center p-4">
-                      <p className="font-bold mb-2">실시간 AI 폼 체크</p>
-                      <button type="button" className="primary-btn bg-accent text-bg px-6 py-2.5 font-bold text-lg rounded-xl flex items-center gap-3 transition-all shadow-[0_0_20px_rgba(0,255,136,0.4)] hover:shadow-[0_0_30px_rgba(0,255,136,0.6)] hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none" onClick={startWebcam} disabled={!modelReady}>
-                        📷 <span>카메라 켜기</span>
+                      <p className="font-bold mb-3 text-white/80">실시간 AI 폼 체크</p>
+                      <button type="button" className="flex items-center justify-center gap-2 px-8 py-3.5 text-base md:text-lg font-bold rounded-full bg-accent text-bg hover:shadow-[0_0_30px_rgba(0,255,136,0.5)] transition-all disabled:opacity-50 disabled:pointer-events-none group hover:brightness-110" onClick={startWebcam} disabled={!modelReady}>
+                        📷 <span>카메라 시작하기</span>
                       </button>
                     </div>
                   )}
@@ -266,15 +266,20 @@ export function PoseAnalyzer() {
                       🔊 음성 코칭
                     </label>
                   </div>
-                  {webcamActive ? (
-                    <button type="button" className="secondary-btn bg-red/10 border border-red text-red font-bold px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm rounded-lg flex items-center justify-center gap-1.5 md:gap-2 hover:bg-red hover:text-white transition-all shadow-[0_0_10px_rgba(255,71,87,0.1)] hover:shadow-[0_0_20px_rgba(255,71,87,0.3)] w-full sm:w-auto whitespace-nowrap" onClick={stopWebcam}>
-                      ⏹️ 카메라 끄기
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <button type="button" onClick={toggleCamera} className="group flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm font-medium rounded-full bg-white/5 border border-white/10 text-white/90 hover:bg-white/10 hover:text-white transition-all flex-1 sm:flex-none whitespace-nowrap">
+                      🔄 {facingMode === 'environment' ? '전면 카메라' : '후면 카메라'}
                     </button>
-                  ) : (
-                    <button type="button" className="primary-btn bg-accent text-bg font-bold px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm rounded-lg flex items-center justify-center gap-1.5 md:gap-2 transition-all shadow-[0_0_15px_rgba(0,255,136,0.3)] hover:shadow-[0_0_25px_rgba(0,255,136,0.5)] w-full sm:w-auto disabled:opacity-50 disabled:shadow-none whitespace-nowrap" onClick={startWebcam} disabled={!modelReady}>
-                      📷 카메라 켜기
-                    </button>
-                  )}
+                    {webcamActive ? (
+                      <button type="button" className="flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full bg-red/10 border border-red/30 text-red-400 hover:bg-red/20 hover:text-red-300 hover:border-red/50 transition-all flex-1 sm:flex-none whitespace-nowrap" onClick={stopWebcam}>
+                        ⏹️ 분석 종료
+                      </button>
+                    ) : (
+                      <button type="button" className="flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-5 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-full bg-accent text-bg hover:shadow-[0_0_15px_rgba(0,255,136,0.4)] hover:brightness-110 transition-all flex-1 sm:flex-none disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap" onClick={startWebcam} disabled={!modelReady}>
+                        📷 카메라 켜기
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (

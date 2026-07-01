@@ -22,6 +22,8 @@ export function useWebcamAnalysis({ exercise, soundEnabled }: UseWebcamAnalysisO
   const [liveAnalysis, setLiveAnalysis] = useState<PostureAnalysisResult | null>(null);
   const [webcamReps, setWebcamReps] = useState<RepRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('environment');
+  const facingModeRef = useRef<'user' | 'environment'>('environment');
 
   const requestRef = useRef<number | null>(null);
   const isProcessingFrame = useRef(false);
@@ -44,7 +46,7 @@ export function useWebcamAnalysis({ exercise, soundEnabled }: UseWebcamAnalysisO
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'environment' },
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: facingModeRef.current },
         audio: false,
       });
 
@@ -83,6 +85,20 @@ export function useWebcamAnalysis({ exercise, soundEnabled }: UseWebcamAnalysisO
     lastSpeechText.current = '';
     lastKneeTime.current = 0;
   }, []);
+
+  const toggleCamera = useCallback(() => {
+    const newMode = facingModeRef.current === 'user' ? 'environment' : 'user';
+    facingModeRef.current = newMode;
+    setFacingMode(newMode);
+    
+    if (webcamActiveRef.current) {
+      stopWebcam();
+      // 약간의 지연 후 카메라 재시작 (이전 스트림 정리 대기)
+      setTimeout(() => {
+        startWebcam();
+      }, 300);
+    }
+  }, [stopWebcam]);
 
   const updateRepCounter = (res: PostureAnalysisResult) => {
     const timestampSec = Date.now() / 1000;
@@ -203,6 +219,8 @@ export function useWebcamAnalysis({ exercise, soundEnabled }: UseWebcamAnalysisO
     webcamActive,
     startWebcam,
     stopWebcam,
+    toggleCamera,
+    facingMode,
     liveAnalysis,
     webcamReps,
     setWebcamReps,
