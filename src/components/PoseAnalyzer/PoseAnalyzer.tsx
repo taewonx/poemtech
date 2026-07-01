@@ -164,12 +164,21 @@ export function PoseAnalyzer() {
 
   // session handling removed
 
+  const handleResetVideo = () => {
+    clearBlob();
+    setFrames([]);
+    setVideoReps([]);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      clearBlob();
-      setFrames([]);
-      setVideoReps([]);
+      if (file.size > 50 * 1024 * 1024) {
+        alert('최대 50MB 이하의 영상만 업로드할 수 있습니다. 길이를 줄여서 다시 시도해주세요.');
+        e.target.value = '';
+        return;
+      }
+      handleResetVideo();
       loadFile(file);
     }
   };
@@ -276,6 +285,7 @@ export function PoseAnalyzer() {
                     <div className="upload-content text-center">
                       <span className="text-4xl mb-2 block">📁</span>
                       <p className="font-bold">운동 영상 올리기</p>
+                      <p className="text-xs text-muted mt-2">최대 50MB (mp4, mov 등)</p>
                     </div>
                   </label>
                 ) : (
@@ -287,9 +297,12 @@ export function PoseAnalyzer() {
                     </div>
                     <VideoControls isPlaying={isPlaying} currentTime={currentTime} duration={duration} playbackRate={playbackRate} onTogglePlay={togglePlay} onStepFrame={stepFrame} onSeek={seek} onSetRate={setRate} />
                     
-                    <div className="analysis-actions flex gap-4 mt-3 bg-card p-3 rounded-radius">
-                      <button type="button" className="primary-btn bg-accent text-bg px-6 py-2 font-bold" onClick={runVideoAnalysis} disabled={analyzing || !modelReady}>
-                        {analyzing ? `분석 중... ${progress}%` : 'AI 폼 분석 시작'}
+                    <div className="analysis-actions flex flex-wrap gap-4 mt-3 bg-card p-3 rounded-radius">
+                      <button type="button" className="primary-btn bg-accent text-bg px-6 py-2 font-bold flex-1 sm:flex-none" onClick={runVideoAnalysis} disabled={analyzing || !modelReady}>
+                        {analyzing ? `분석 중... ${progress}%` : frames.length > 0 ? '다시 분석하기' : 'AI 폼 분석 시작'}
+                      </button>
+                      <button type="button" className="secondary-btn bg-elevated text-white border border-white/10 px-6 py-2 font-bold hover:bg-white/5 transition-colors rounded-lg flex-1 sm:flex-none" onClick={handleResetVideo} disabled={analyzing}>
+                        다른 영상 업로드
                       </button>
                     </div>
                   </>

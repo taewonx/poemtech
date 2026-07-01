@@ -39,9 +39,30 @@ export function loadAnalyses(): SavedAnalysis[] {
 }
 
 export function saveAnalysis(analysis: SavedAnalysis) {
-  const list = loadAnalyses();
-  list.unshift(analysis);
-  localStorage.setItem(ANALYSES_KEY, JSON.stringify(list.slice(0, 20)));
+  try {
+    let list = loadAnalyses();
+    list.unshift(analysis);
+    
+    // 로컬 스토리지 용량 제한 방지: 5개까지만 저장
+    list = list.slice(0, 5);
+    
+    try {
+      localStorage.setItem(ANALYSES_KEY, JSON.stringify(list));
+    } catch {
+      // 용량 초과 에러 (QuotaExceededError) 발생 시 가장 오래된 것부터 삭제하며 재시도
+      while (list.length > 1) {
+        list.pop();
+        try {
+          localStorage.setItem(ANALYSES_KEY, JSON.stringify(list));
+          break;
+        } catch {
+          continue;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('분석 결과 저장 실패:', error);
+  }
 }
 
 

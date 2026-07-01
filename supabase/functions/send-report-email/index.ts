@@ -21,17 +21,63 @@ Deno.serve(async (req: Request) => {
       ? JSON.parse(record.detailed_analysis) 
       : record.detailed_analysis;
 
-    // 3. 횟수별 오류 내역을 HTML 리스트로 변환
+    // 3. 통계 및 맞춤형 솔루션 계산
     let repsHtml = '';
+    let customSolutionHtml = '';
+    const errorCounts: Record<string, number> = {};
+
     if (detailedData && Array.isArray(detailedData)) {
-      repsHtml = detailedData.map((rep: { repIndex: number; errorType?: string[] }) => {
+      // 에러 카운팅
+      detailedData.forEach((rep: { errorType?: string[] }) => {
+        if (rep.errorType && Array.isArray(rep.errorType)) {
+          rep.errorType.forEach((err: string) => {
+            errorCounts[err] = (errorCounts[err] || 0) + 1;
+          });
+        }
+      });
+
+      // 자주 발생하는 에러 2가지 기반 맞춤형 솔루션 생성
+      const topErrors = Object.entries(errorCounts).sort((a, b) => b[1] - a[1]).slice(0, 2);
+      if (topErrors.length > 0) {
+        customSolutionHtml = topErrors.map(([err, count]) => {
+          let advice = '해당 관절의 안정성과 가동성을 높이기 위한 보조 운동을 추가하는 것을 추천합니다.';
+          if (err.includes('무릎') || err.includes('Knee')) advice = '발끝과 무릎 방향을 일치시키고 하체 후면 근육(둔근, 햄스트링)을 더 활용해보세요. 밴드를 활용한 웜업이 도움이 될 수 있습니다.';
+          else if (err.includes('허리') || err.includes('Back') || err.includes('척추')) advice = '복압(브레이싱)을 단단히 잡고 척추 중립을 유지하는 연습이 필요합니다. 가벼운 무게부터 시작해 코어 활성화에 집중하세요.';
+          else if (err.includes('깊이') || err.includes('Depth') || err.includes('가동범위')) advice = '고관절 가동성이 제한되어 있거나 유연성이 부족할 수 있습니다. 고관절 및 발목 스트레칭을 병행하면 더 안정적인 깊이를 만들 수 있습니다.';
+          else if (err.includes('중심') || err.includes('Balance')) advice = '발바닥 전체(삼각대)로 지면을 꽉 누르는 느낌에 집중하세요. 무게 중심이 앞이나 뒤로 쏠리지 않도록 주의해야 합니다.';
+          else if (err.includes('시선') || err.includes('Head')) advice = '시선이 너무 올라가거나 내려가면 척추 중립이 깨집니다. 약 1~2m 앞 바닥을 자연스럽게 응시하세요.';
+
+          return `
+            <div style="margin-bottom: 15px;">
+              <p style="margin: 0; font-weight: bold; color: #2d3748;">🚨 주요 문제: ${err} (${count}회 발생)</p>
+              <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 14px; line-height: 1.5;">💡 <strong>솔루션:</strong> ${advice}</p>
+            </div>
+          `;
+        }).join('');
+      } else {
+        customSolutionHtml = `
+          <div style="margin-bottom: 15px;">
+            <p style="margin: 0; font-weight: bold; color: #38a169;">✨ 완벽에 가까운 자세입니다!</p>
+            <p style="margin: 5px 0 0 0; color: #4a5568; font-size: 14px; line-height: 1.5;">💡 <strong>솔루션:</strong> 현재 폼을 아주 잘 유지하고 있습니다. 부상 위험이 적으므로, 점진적 과부하를 통해 무게를 늘리거나 템포를 조절하여 자극을 극대화해보세요.</p>
+          </div>
+        `;
+      }
+
+      // 횟수별 HTML 리스트
+      repsHtml = detailedData.map((rep: { repIndex: number; errorType?: string[]; duration?: number; maxDepth?: string; }) => {
         const errorText = rep.errorType && rep.errorType.length > 0 
-          ? `<span style="color: #e53e3e;">주의: ${rep.errorType.join(', ')}</span>` 
-          : `<span style="color: #38a169;">완벽함!</span>`;
+          ? `<span style="color: #e53e3e; font-weight: bold;">개선 필요:</span> ${rep.errorType.join(', ')}` 
+          : `<span style="color: #38a169; font-weight: bold;">완벽함!</span>`;
         
+        const durationSec = rep.duration ? rep.duration.toFixed(1) + '초' : '-';
+        const depthMap: Record<string, string> = { 'deep': '풀 (안정적)', 'parallel': '패러렐 (적절)', 'partial': '하프 (부족)', 'standing': '스탠딩' };
+        const depthLabel = rep.maxDepth ? (depthMap[rep.maxDepth] || rep.maxDepth) : '-';
+
         return `
-          <tr style="border-bottom: 1px solid #edf2f7;">
-            <td style="padding: 12px; font-weight: bold;">${rep.repIndex}회차</td>
+          <tr style="border-bottom: 1px solid #edf2f7; font-size: 14px;">
+            <td style="padding: 12px; font-weight: bold; color: #4a5568;">${rep.repIndex}회차</td>
+            <td style="padding: 12px; color: #718096;">${durationSec}</td>
+            <td style="padding: 12px; color: #718096;">${depthLabel}</td>
             <td style="padding: 12px;">${errorText}</td>
           </tr>
         `;
@@ -64,12 +110,21 @@ Deno.serve(async (req: Request) => {
           </div>
         </div>
 
+        <div style="background-color: white; padding: 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;">
+          <h2 style="color: #2d3748; font-size: 20px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px;">🩺 전문가 맞춤 교정 솔루션</h2>
+          <div style="margin-top: 15px; padding: 15px; background-color: #f7fafc; border-radius: 8px; border-left: 4px solid #3182ce;">
+            ${customSolutionHtml}
+          </div>
+        </div>
+
         <div style="background-color: white; padding: 24px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-          <h2 style="color: #2d3748; font-size: 20px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px;">🔍 횟수별 상세 분석</h2>
+          <h2 style="color: #2d3748; font-size: 20px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px;">🔍 횟수별 심층 분석 (수행 시간 및 가동 범위)</h2>
           <table style="width: 100%; border-collapse: collapse; margin-top: 15px; text-align: left;">
             <thead>
-              <tr style="background-color: #f7fafc; color: #4a5568;">
+              <tr style="background-color: #f7fafc; color: #4a5568; font-size: 14px;">
                 <th style="padding: 12px; border-radius: 8px 0 0 8px;">횟수</th>
+                <th style="padding: 12px;">수행 시간</th>
+                <th style="padding: 12px;">최대 깊이</th>
                 <th style="padding: 12px; border-radius: 0 8px 8px 0;">분석 결과</th>
               </tr>
             </thead>

@@ -71,9 +71,9 @@ export async function detectPoseInVideo(
 
     if (poses[0]) {
       const keypoints: PoseKeypoint[] = poses[0].keypoints.map((kp) => ({
-        x: kp.x,
-        y: kp.y,
-        z: kp.z,
+        x: kp.x / (canvasW / (video.videoWidth || 1)),
+        y: kp.y / (canvasH / (video.videoHeight || 1)),
+        z: kp.z ? kp.z / (canvasW / (video.videoWidth || 1)) : undefined,
         score: kp.score,
         name: kp.name,
       }));
